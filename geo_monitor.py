@@ -7,34 +7,15 @@
 import os
 import json
 import re
-import requests
 from bs4 import BeautifulSoup
 from linebot import LineBotApi
 from linebot.models import TextSendMessage
 from datetime import datetime
+from playwright.sync_api import sync_playwright
 
 URL = "https://mvno.geo-mobile.jp/uqmobile/smartphone/"
 STATE_FILE = "geo_state.json"
 
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0.0.0 Safari/537.36"
-    ),
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-    "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Referer": "https://www.google.co.jp/",
-    "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1",
-    "sec-ch-ua": '"Chromium";v="124", "Google Chrome";v="124"',
-    "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": '"Windows"',
-    "Sec-Fetch-Dest": "document",
-    "Sec-Fetch-Mode": "navigate",
-    "Sec-Fetch-Site": "cross-site",
-}
 
 
 # ── LINE送信 ──────────────────────────────────────────────
@@ -84,16 +65,31 @@ def scrape_products() -> list[dict]:
         ...
     ]
     """
-    session = requests.Session()
-    resp = session.get(URL, headers=HEADERS, timeout=30)
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            ),
+            locale="ja-JP",
+            extra_http_headers={
+                "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
+            }
+        )
+        page = context.new_page()
+        response = page.goto(URL, wait_until="networkidle", timeout=60000)
 
-    if resp.status_code == 403:
-        print(f"[ERROR] 403 Forbidden: サイトにアクセスを拒否されました (status={resp.status_code})")
-        print("[INFO] GitHub ActionsのIPがブロックされている可能性があります")
-        return []
+        if response.status == 403:
+            print(f"[ERROR] 403 Forbidden: Playwrightでもアクセスを拒否されました")
+            browser.close()
+            return []
 
-    resp.raise_for_status()
-    soup = BeautifulSoup(resp.content, "html.parser")
+        html = page.content()
+        browser.close()
+
+    soup = BeautifulSoup(html, "html.parser")
 
     products = []
 
