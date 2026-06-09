@@ -17,9 +17,9 @@ import re
 
 app = Flask(__name__)
 
-# LINE Bot設定
-LINE_CHANNEL_ACCESS_TOKEN = 'monHF/zzGHwyTnww0TpB+mewCv3r2YVkuXtm6Sns4NtUV37N/vDbMvLdai/n6Qi6rqyxMQ+Xmr2RdwAa0zt5/bgCXwa/5AWal2Ec3ndPcb7m+/u27RIRcjiSYmmaTzaDG/lOExk28Kwubfg+tEKzfQdB04t89/1O/w1cDnyilFU='
-LINE_USER_ID = 'U115368062ae933fb88020ea97a1cba8b'
+# LINE Bot設定（環境変数 or GitHub Secrets から読み込む）
+LINE_CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN', '')
+LINE_USER_ID = os.environ.get('LINE_USER_ID', '')
 
 class IPOMonitor:
     def __init__(self):
