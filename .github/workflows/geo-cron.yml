@@ -28,7 +28,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           playwright install chromium
-          playwright install-deps chromium
+          sudo playwright install-deps chromium
 
       - name: ゲオモバイル監視スクリプトを実行
         env:
