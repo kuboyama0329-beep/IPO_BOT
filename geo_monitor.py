@@ -21,7 +21,19 @@ HEADERS = {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/124.0.0.0 Safari/537.36"
-    )
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Referer": "https://www.google.co.jp/",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "sec-ch-ua": '"Chromium";v="124", "Google Chrome";v="124"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"Windows"',
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "cross-site",
 }
 
 
@@ -72,7 +84,14 @@ def scrape_products() -> list[dict]:
         ...
     ]
     """
-    resp = requests.get(URL, headers=HEADERS, timeout=30)
+    session = requests.Session()
+    resp = session.get(URL, headers=HEADERS, timeout=30)
+
+    if resp.status_code == 403:
+        print(f"[ERROR] 403 Forbidden: サイトにアクセスを拒否されました (status={resp.status_code})")
+        print("[INFO] GitHub ActionsのIPがブロックされている可能性があります")
+        return []
+
     resp.raise_for_status()
     soup = BeautifulSoup(resp.content, "html.parser")
 
