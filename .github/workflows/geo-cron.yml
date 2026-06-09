@@ -8,7 +8,7 @@ on:
 
 jobs:
   monitor:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     permissions:
       contents: write  # geo_state.json をコミットし直すために必要
 
