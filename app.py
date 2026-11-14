@@ -86,6 +86,8 @@ class IPOMonitor:
         idx_period = col('申し込み期間','申込期間')
         idx_listing = col('上場日')
         idx_offering = col('公募価格')
+        idx_provisional = col('仮条件')
+        idx_expected = col('想定価格')
         idx_rating = col('総合評価')
         details = []
         for r in rows[rows.index(header_row)+1:]:
@@ -93,16 +95,37 @@ class IPOMonitor:
             if not cells:
                 continue
             def get(i):
-                return cells[i].get_text(strip=True) if 0<=i<len(cells) else ''
+                # <br>で分割された値（例: 1,220円<br>～1,240円）を連結して取得
+                return cells[i].get_text('', strip=True) if 0<=i<len(cells) else ''
+            def has_value(v):
+                return bool(v) and v not in ('-', '－', '―', '未定')
             period = get(idx_period)
             listing = get(idx_listing)
+            # 公募価格が未確定（"-"）の場合は仮条件 → 想定価格の順でフォールバック
             offering = get(idx_offering)
+            if not has_value(offering):
+                provisional = get(idx_provisional)
+                expected = get(idx_expected)
+                if has_value(provisional):
+                    offering = f"{provisional}（仮条件）"
+                elif has_value(expected):
+                    offering = f"{expected}（想定価格）"
+                else:
+                    offering = '未定'
             rating = get(idx_rating)
             if not rating and 0<=idx_rating<len(cells):
                 img = cells[idx_rating].find('img')
-                if img and img.get('src'):
-                    src = img.get('src')
-                    rating = 'S' if 's03' in src else 'A' if 'a03' in src else 'B' if 'b03' in src else 'C' if 'c03' in src else 'D' if 'd03' in src else ''
+                if img:
+                    # 現行サイト: <img src="/company/image/ico_eva_d.png" alt="D">
+                    alt = (img.get('alt') or '').strip().upper()
+                    src = img.get('src') or ''
+                    m = re.search(r'(?:ico_eva_|/)([sabcd])(?:03)?\.(?:png|gif|jpe?g)', src, re.I)
+                    if alt in ('S', 'A', 'B', 'C', 'D'):
+                        rating = alt
+                    elif m:
+                        rating = m.group(1).upper()
+            if not rating:
+                rating = '不明'
             details.append({
                 'application_period': period,
                 'listing_date': listing,
