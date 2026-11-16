@@ -2,8 +2,8 @@ name: IPO監視BOT - 毎朝8時実行
 
 on:
   schedule:
-    # 毎日朝8時（JST）に実行（UTC 23:00）
-    - cron: '0 23 * * *'
+    # 毎日朝8:12（JST）に実行（UTC 23:12）※0分ちょうどは混雑で遅延しやすいため
+    - cron: '12 23 * * *'
   workflow_dispatch: # 手動実行も可能
 
 jobs:
